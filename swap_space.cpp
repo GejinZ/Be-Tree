@@ -43,7 +43,7 @@ void deserialize(std::iostream &fs, serialization_context &context, std::string 
   fs.read(buf, length);
   assert(fs.good());
   x = std::string(buf, length);
-  delete buf;
+  delete[] buf;
 }
 
 bool swap_space::cmp_by_last_access(swap_space::object *a, swap_space::object *b) {
@@ -51,10 +51,10 @@ bool swap_space::cmp_by_last_access(swap_space::object *a, swap_space::object *b
 }
 
 swap_space::swap_space(backing_store *bs, uint64_t n) :
-  backstore(bs),
-  max_in_memory_objects(n),
-  objects(),
-  lru_pqueue(cmp_by_last_access)
+        backstore(bs),
+        max_in_memory_objects(n),
+        objects(),
+        lru_pqueue(cmp_by_last_access)
 {}
 
 swap_space::object::object(swap_space *sspace, serializable * tgt) {
@@ -79,8 +79,8 @@ void swap_space::write_back(swap_space::object *obj)
   assert(objects.count(obj->id) > 0);
 
   debug(std::cout << "Writing back " << obj->id
-	<< " (" << obj->target << ") "
-	<< "with last access time " << obj->last_access << std::endl);
+                  << " (" << obj->target << ") "
+                  << "with last access time " << obj->last_access << std::endl);
 
   // This calls _serialize on all the pointers in this object,
   // which keeps refcounts right later on when we delete them all.
@@ -111,15 +111,15 @@ void swap_space::maybe_evict_something(void)
     object *obj = NULL;
     for (auto it = lru_pqueue.begin(); it != lru_pqueue.end(); ++it)
       if ((*it)->pincount == 0) {
-	obj = *it;
-	break;
+        obj = *it;
+        break;
       }
     if (obj == NULL)
       return;
     lru_pqueue.erase(obj);
 
     write_back(obj);
-    
+
     delete obj->target;
     obj->target = NULL;
     current_in_memory_objects--;
